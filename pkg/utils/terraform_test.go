@@ -6,6 +6,7 @@ import (
 	"github.com/akhilsharma90/terraform-assistant/pkg/utils"
 )
 
+// TestEndsWithTf tests the EndsWithTf function to check if a given string ends with ".tf".
 func TestEndsWithTf(t *testing.T) {
 	cases := []struct {
 		input    string
@@ -26,6 +27,8 @@ func TestEndsWithTf(t *testing.T) {
 	}
 }
 
+// TestRandomName is a unit test function that tests the RandomName function in the utils package.
+// It generates two random names and checks if they are unique.
 func TestRandomName(t *testing.T) {
 	name1 := utils.RandomName()
 	name2 := utils.RandomName()
