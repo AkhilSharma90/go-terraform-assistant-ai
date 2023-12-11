@@ -17,7 +17,6 @@ import (
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 net/http.RoundTripper
 
-// TestInitNewClient tests the scenario where a new GPT-3 client is initialized with a test key.
 func TestInitNewClient(t *testing.T) {
 	client := gpt3.NewClient("test-key")
 	assert.NotNil(t, client)
@@ -30,11 +29,6 @@ func fakeHTTPClient() (*fakes.FakeRoundTripper, *http.Client) {
 	}
 }
 
-// TestRequestCreationFails tests the scenario where request creation fails for various API calls.
-// It sets up a fake HTTP client and mocks the round trip to return a request error.
-// Then, it defines a list of test cases, each representing an API call and the expected error string.
-// For each test case, it calls the API function and asserts that the returned error matches the expected error string.
-// Finally, it asserts that the response is nil for each test case.
 func TestRequestCreationFails(t *testing.T) {
 	ctx := context.Background()
 	rt, httpClient := fakeHTTPClient()
@@ -139,36 +133,28 @@ func TestRequestCreationFails(t *testing.T) {
 
 type errReader int
 
-// Read is a method that implements the Read function of the io.Reader interface.
 func (errReader) Read(_ []byte) (n int, err error) {
 	return 0, errors.New("read error")
 }
 
 func TestResponses(t *testing.T) {
-	// Create a new context
 	ctx := context.Background()
-
-	// Create a fake HTTP client for testing
 	rt, httpClient := fakeHTTPClient()
-
-	// Create a new GPT-3 client with a test key and the fake HTTP client
 	client := gpt3.NewClient("test-key", gpt3.WithHTTPClient(httpClient))
 
-	// Define a test case struct to hold the name, API call function, and expected response object
 	type testCase struct {
 		name           string
 		apiCall        func() (interface{}, error)
 		responseObject interface{}
 	}
 
-	// Define a list of test cases
 	testCases := []testCase{
 		{
-			name: "Engines",
-			apiCall: func() (interface{}, error) {
+			"Engines",
+			func() (interface{}, error) {
 				return client.Engines(ctx)
 			},
-			responseObject: &gpt3.EnginesResponse{
+			&gpt3.EnginesResponse{
 				Data: []gpt3.EngineObject{
 					{
 						ID:     "123",
@@ -179,44 +165,153 @@ func TestResponses(t *testing.T) {
 				},
 			},
 		},
-		// Add more test cases...
+		{
+			"Engine",
+			func() (interface{}, error) {
+				return client.Engine(ctx, gpt3.DefaultEngine)
+			},
+			&gpt3.EngineObject{
+				ID:     "123",
+				Object: "list",
+				Owner:  "owner",
+				Ready:  true,
+			},
+		},
+		{
+			"Completion",
+			func() (interface{}, error) {
+				return client.Completion(ctx, gpt3.CompletionRequest{})
+			},
+			&gpt3.CompletionResponse{
+				ID:      "123",
+				Object:  "list",
+				Created: 123456789,
+				Model:   "davinci-12",
+				Choices: []gpt3.CompletionResponseChoice{
+					{
+						Text:         "output",
+						FinishReason: "stop",
+					},
+				},
+			},
+		},
+		{
+			"CompletionStream",
+			func() (interface{}, error) {
+				var rsp *gpt3.CompletionResponse
+				onData := func(data *gpt3.CompletionResponse) {
+					rsp = data
+				}
+				return rsp, client.CompletionStream(ctx, gpt3.CompletionRequest{}, onData)
+			},
+			nil, // streaming responses are tested separately
+		},
+		{
+			"CompletionWithEngine",
+			func() (interface{}, error) {
+				return client.CompletionWithEngine(ctx, gpt3.AdaEngine, gpt3.CompletionRequest{})
+			},
+			&gpt3.CompletionResponse{
+				ID:      "123",
+				Object:  "list",
+				Created: 123456789,
+				Model:   "davinci-12",
+				Choices: []gpt3.CompletionResponseChoice{
+					{
+						Text:         "output",
+						FinishReason: "stop",
+					},
+				},
+			},
+		},
+		{
+			"CompletionStreamWithEngine",
+			func() (interface{}, error) {
+				var rsp *gpt3.CompletionResponse
+				onData := func(data *gpt3.CompletionResponse) {
+					rsp = data
+				}
+				return rsp, client.CompletionStreamWithEngine(ctx, gpt3.AdaEngine, gpt3.CompletionRequest{}, onData)
+			},
+			nil, // streaming responses are tested separately
+		},
+		{
+			"Search",
+			func() (interface{}, error) {
+				return client.Search(ctx, gpt3.SearchRequest{})
+			},
+			&gpt3.SearchResponse{
+				Data: []gpt3.SearchData{
+					{
+						Document: 1,
+						Object:   "search_result",
+						Score:    40.312,
+					},
+				},
+			},
+		},
+		{
+			"SearchWithEngine",
+			func() (interface{}, error) {
+				return client.SearchWithEngine(ctx, gpt3.AdaEngine, gpt3.SearchRequest{})
+			},
+			&gpt3.SearchResponse{
+				Data: []gpt3.SearchData{
+					{
+						Document: 1,
+						Object:   "search_result",
+						Score:    40.312,
+					},
+				},
+			},
+		},
+		{
+			"Embeddings",
+			func() (interface{}, error) {
+				return client.Embeddings(ctx, gpt3.EmbeddingsRequest{})
+			},
+			&gpt3.EmbeddingsResponse{
+				Object: "list",
+				Data: []gpt3.EmbeddingsResult{{
+					Object:    "object",
+					Embedding: []float64{0.1, 0.2, 0.3},
+					Index:     0,
+				}},
+				Usage: gpt3.EmbeddingsUsage{
+					PromptTokens: 1,
+					TotalTokens:  2,
+				},
+			},
+		},
 	}
 
-	// Iterate over the test cases
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Run("bad status codes", func(t *testing.T) {
-				// Test different HTTP status codes
 				for _, code := range []int{400, 401, 404, 422, 500} {
-					// Mock the HTTP response with the specified status code and an error body
+					// first mock with error with body failure
 					mockResponse := &http.Response{
 						StatusCode: code,
 						Body:       io.NopCloser(errReader(0)),
 					}
 
-					// Set the mock response for the fake HTTP client
 					rt.RoundTripReturns(mockResponse, nil)
-
-					// Make the API call and assert the expected error
 					rsp, err := tc.apiCall()
 					assert.Nil(t, rsp)
 					assert.EqualError(t, err, "failed to read from body: read error")
 
-					// Mock the HTTP response with the specified status code and an unknown error string
+					// then mock with an unknown error string
 					mockResponse = &http.Response{
 						StatusCode: code,
 						Body:       io.NopCloser(bytes.NewBufferString("unknown error")),
 					}
 
-					// Set the mock response for the fake HTTP client
 					rt.RoundTripReturns(mockResponse, nil)
-
-					// Make the API call and assert the expected error
 					rsp, err = tc.apiCall()
 					assert.Nil(t, rsp)
 					assert.EqualError(t, err, fmt.Sprintf("[%d:Unexpected] unknown error", code))
 
-					// Mock the HTTP response with the specified status code and a JSON APIErrorResponse
+					// then mock with an json APIErrorResponse
 					apiErrorResponse := &gpt3.APIErrorResponse{
 						Error: gpt3.APIError{
 							Type:    "test_type",
@@ -232,10 +327,7 @@ func TestResponses(t *testing.T) {
 						Body:       io.NopCloser(bytes.NewBuffer(data)),
 					}
 
-					// Set the mock response for the fake HTTP client
 					rt.RoundTripReturns(mockResponse, nil)
-
-					// Make the API call and assert the expected error
 					rsp, err = tc.apiCall()
 					assert.Nil(t, rsp)
 					assert.EqualError(t, err, fmt.Sprintf("[%d:test_type] test message", code))
@@ -243,40 +335,31 @@ func TestResponses(t *testing.T) {
 					assert.Equal(t, apiErrorResponse.Error, err)
 				}
 			})
-
 			t.Run("success code json decode failure", func(t *testing.T) {
-				// Mock the HTTP response with a success status code and an invalid JSON body
 				mockResponse := &http.Response{
 					StatusCode: 200,
 					Body:       io.NopCloser(bytes.NewBufferString("invalid json")),
 				}
 
-				// Set the mock response for the fake HTTP client
 				rt.RoundTripReturns(mockResponse, nil)
 
-				// Make the API call and assert the expected error
 				rsp, err := tc.apiCall()
 				assert.Error(t, err, "invalid json response: invalid character 'i' looking for beginning of value")
 				assert.Nil(t, rsp)
 			})
-
-			// Skip streaming/nil response objects here as those will be tested separately
+			// skip streaming/nil response objects here as those will be tested separately
 			if tc.responseObject != nil {
 				t.Run("successful response", func(t *testing.T) {
-					// Marshal the expected response object to JSON
 					data, err := json.Marshal(tc.responseObject)
 					assert.NoError(t, err)
 
-					// Mock the HTTP response with a success status code and the JSON body
 					mockResponse := &http.Response{
 						StatusCode: 200,
 						Body:       io.NopCloser(bytes.NewBuffer(data)),
 					}
 
-					// Set the mock response for the fake HTTP client
 					rt.RoundTripReturns(mockResponse, nil)
 
-					// Make the API call and assert the expected response
 					rsp, err := tc.apiCall()
 					assert.NoError(t, err)
 					assert.Equal(t, tc.responseObject, rsp)
