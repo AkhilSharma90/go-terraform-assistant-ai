@@ -13,7 +13,9 @@ import (
 
 var errResp = errors.New("invalid response")
 
+// openaiGptCompletion generates a GPT-3 completion using the OpenAI API.
 func (c *oaiClients) openaiGptCompletion(ctx context.Context, prompt strings.Builder, maxTokens *int, temp float32) (string, error) {
+	// Make a completion request to the OpenAI API
 	resp, err := c.openAIClient.CompletionWithEngine(ctx, *openAIDeploymentName, openai.CompletionRequest{
 		Prompt:      []string{prompt.String()},
 		MaxTokens:   maxTokens,
@@ -25,10 +27,12 @@ func (c *oaiClients) openaiGptCompletion(ctx context.Context, prompt strings.Bui
 		return "", fmt.Errorf("error openai completion: %w", err)
 	}
 
+	// Check if the response contains exactly one choice
 	if len(resp.Choices) != 1 {
 		return "", errors.Wrapf(errResp, "expected choices to be 1 but received: %d", len(resp.Choices))
 	}
 
+	// Return the generated completion text
 	return resp.Choices[0].Text, nil
 }
 

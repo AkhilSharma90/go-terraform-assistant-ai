@@ -51,11 +51,14 @@ type client struct {
 }
 
 // NewClient returns a new OpenAI GPT-3 API client. An apiKey is required to use the client.
+// NewClient creates a new GPT-3 client with the specified endpoint, API key, deployment name, and optional client options.
 func NewClient(endpoint string, apiKey string, deploymentName string, options ...ClientOption) (Client, error) {
+	// Create a new HTTP client with a default timeout.
 	httpClient := &http.Client{
 		Timeout: defaultTimeoutSeconds * time.Second,
 	}
 
+	// Create a new client instance with the provided parameters.
 	c := &client{
 		endpoint:       endpoint,
 		apiKey:         apiKey,
@@ -64,32 +67,47 @@ func NewClient(endpoint string, apiKey string, deploymentName string, options ..
 		userAgent:      defaultUserAgent,
 		httpClient:     httpClient,
 	}
+
+	// Apply any additional client options provided.
 	for _, o := range options {
 		if err := o(c); err != nil {
 			return nil, err
 		}
 	}
+
 	return c, nil
 }
 
+// Completion sends a completion request to the OpenAI API and returns the completion response.
 func (c *client) Completion(ctx context.Context, request CompletionRequest) (*CompletionResponse, error) {
+	// Set the Stream field of the request to false
 	request.Stream = false
+
+	// Create a new request using the context, HTTP method, and endpoint URL
 	req, err := c.newRequest(ctx, "POST", fmt.Sprintf("/openai/deployments/%s/completions", c.deploymentName), request)
 	if err != nil {
 		return nil, err
 	}
+
+	// Perform the request and get the response
 	resp, err := c.performRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
+	// Create a new CompletionResponse object to store the response data
 	output := new(CompletionResponse)
+
+	// Parse the response and populate the output object
 	if err := getResponseObject(resp, output); err != nil {
 		return nil, err
 	}
+
+	// Return the output object and nil error
 	return output, nil
 }
 
+// ChatCompletion sends a chat completion request to the OpenAI API and returns the response.
 func (c *client) ChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	request.Stream = false
 
@@ -115,83 +133,121 @@ var (
 	doneSequence = []byte("[DONE]")
 )
 
+// CompletionStream is a method that allows streaming of completion responses from the OpenAI API.
 func (c *client) CompletionStream(ctx context.Context, request CompletionRequest, onData func(*CompletionResponse)) error {
+	// Set the stream flag to true in the request
 	request.Stream = true
+
+	// Create a new request using the provided context, HTTP method, and endpoint
 	req, err := c.newRequest(ctx, "POST", fmt.Sprintf("/openai/deployments/%s/completions", c.deploymentName), request)
 	if err != nil {
 		return err
 	}
+
+	// Perform the request and get the response
 	resp, err := c.performRequest(req)
 	if err != nil {
 		return err
 	}
 
+	// Create a new reader to read the response body
 	reader := bufio.NewReader(resp.Body)
 	defer resp.Body.Close()
 
+	// Read the response body line by line
 	for {
+		// Read a line from the response body
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			return err
 		}
-		// make sure there isn't any extra whitespace before or after
+
+		// Trim any extra whitespace from the line
 		line = bytes.TrimSpace(line)
-		// the completion API only returns data events
+
+		// Check if the line is a data event
 		if !bytes.HasPrefix(line, dataPrefix) {
 			continue
 		}
+
+		// Remove the data prefix from the line
 		line = bytes.TrimPrefix(line, dataPrefix)
 
-		// the stream is completed when terminated by [DONE]
+		// Check if the line indicates the end of the stream
 		if bytes.HasPrefix(line, doneSequence) {
 			break
 		}
+
+		// Create a new CompletionResponse object
 		output := new(CompletionResponse)
+
+		// Unmarshal the line into the CompletionResponse object
 		if err := json.Unmarshal(line, output); err != nil {
 			return fmt.Errorf("invalid json stream data: %w", err)
 		}
+
+		// Call the onData callback function with the CompletionResponse object
 		onData(output)
 	}
 
 	return nil
 }
 
+// Edits sends a request to the GPT-3 API to perform edits on a given text.
 func (c *client) Edits(ctx context.Context, request EditsRequest) (*EditsResponse, error) {
+	// Create a new request with the provided context, HTTP method, and request body.
 	req, err := c.newRequest(ctx, "POST", "/edits", request)
 	if err != nil {
 		return nil, err
 	}
+
+	// Perform the request and get the response.
 	resp, err := c.performRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
+	// Create a new EditsResponse object to store the response data.
 	output := new(EditsResponse)
+
+	// Parse the response and populate the output object.
 	if err := getResponseObject(resp, output); err != nil {
 		return nil, err
 	}
+
 	return output, nil
 }
 
+// Search sends a search request to the OpenAI API and returns the search response.
 func (c *client) Search(ctx context.Context, request SearchRequest) (*SearchResponse, error) {
+	// Create a new request using the provided context, HTTP method, and endpoint.
 	req, err := c.newRequest(ctx, "POST", fmt.Sprintf("/openai/deployments/%s/search", c.deploymentName), request)
 	if err != nil {
 		return nil, err
 	}
+
+	// Perform the request and get the response.
 	resp, err := c.performRequest(req)
 	if err != nil {
 		return nil, err
 	}
+
+	// Create a new SearchResponse object to hold the response data.
 	output := new(SearchResponse)
+
+	// Parse the response and populate the output object.
 	if err := getResponseObject(resp, output); err != nil {
 		return nil, err
 	}
+
 	return output, nil
 }
 
 // Embeddings creates text embeddings for a supplied slice of inputs with a provided model.
 //
 // See: https://beta.openai.com/docs/api-reference/embeddings
+// It sends a POST request to the "/embeddings" endpoint with the provided request data.
+// It returns the embeddings response or an error if the request fails.
 func (c *client) Embeddings(ctx context.Context, request EmbeddingsRequest) (*EmbeddingsResponse, error) {
 	req, err := c.newRequest(ctx, "POST", "/embeddings", request)
 	if err != nil {
@@ -252,29 +308,40 @@ func getResponseObject(rsp *http.Response, v interface{}) error {
 	return nil
 }
 
+// jsonBodyReader is a helper function that converts the given body interface{} into a JSON-encoded io.Reader.
 func jsonBodyReader(body interface{}) (io.Reader, error) {
 	if body == nil {
 		return bytes.NewBuffer(nil), nil
 	}
+
 	raw, err := json.Marshal(body)
 	if err != nil {
 		return nil, fmt.Errorf("failed encoding json: %w", err)
 	}
+
 	return bytes.NewBuffer(raw), nil
 }
 
+// newRequest creates a new HTTP request with the specified method, path, and payload.
 func (c *client) newRequest(ctx context.Context, method, path string, payload interface{}) (*http.Request, error) {
+	// Create a JSON body reader from the payload
 	bodyReader, err := jsonBodyReader(payload)
 	if err != nil {
 		return nil, err
 	}
+
+	// Construct the request URL with the endpoint, path, and API version
 	reqURL := fmt.Sprintf("%s%s?api-version=%s", c.endpoint, path, c.apiVersion)
+
+	// Create a new HTTP request with the specified method, URL, and body reader
 	req, err := http.NewRequestWithContext(ctx, method, reqURL, bodyReader)
 	if err != nil {
 		return nil, err
 	}
 
+	// Set the Content-type and api-key headers
 	req.Header.Set("Content-type", "application/json")
 	req.Header.Set("api-key", c.apiKey)
+
 	return req, nil
 }

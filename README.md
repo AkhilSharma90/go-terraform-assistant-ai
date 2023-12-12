@@ -1,18 +1,27 @@
-# Terraform OpenAI 
+# Terraform OpenAI Assistant
 
-`Terraform-assistant`, powered by OpenAI ChatGPT, simplifies the process of applying Terraform HCL files by providing an intelligent and interactive assistant.
+`Terraform-assistant`, powered by OpenAI ChatGPT, enhances the process of applying Terraform HCL (HashiCorp Configuration Language) files. It provides an intelligent and interactive assistant, streamlining infrastructure provisioning and management with advanced language model capabilities.
 
 ## Usage
 
 ### Prerequisites
 
-`terraform-assistant` requires an [OpenAI API key](https://platform.openai.com/overview) or an [Azure OpenAI Service](https://aka.ms/azure-openai) API key and endpoint.
+Before using `terraform-assistant`, obtain an API key from either [OpenAI](https://platform.openai.com/overview) or [Azure OpenAI Service](https://aka.ms/azure-openai).
 
-For both OpenAI and Azure OpenAI, you can use the following environment variables:
+#### Setting Up Environment Variables
 
+For both OpenAI and Azure OpenAI, set the following environment variables:
+
+**On Unix/Linux/macOS:**
 ```shell
 export OPENAI_API_KEY=<your OpenAI key>
-export OPENAI_DEPLOYMENT_NAME=<your OpenAI deployment/model name. defaults to "gpt-3.5-turbo">
+export OPENAI_DEPLOYMENT_NAME=<your deployment/model name (default: "gpt-3.5-turbo")>
+```
+
+**On Windows:**
+```shell
+set OPENAI_API_KEY=<your OpenAI key>
+set OPENAI_DEPLOYMENT_NAME=<your deployment/model name (default: "gpt-3.5-turbo")>
 ```
 
 > Following models are supported:
@@ -32,7 +41,7 @@ export AZURE_OPENAI_ENDPOINT=<your Azure OpenAI endpoint, like "https://my-aoi-e
 
 If `AZURE_OPENAI_ENDPOINT` variable is set, then it will use the Azure OpenAI Service. Otherwise, it will use OpenAI API.
 
-### Flags and environment variables
+### Flags and Environment Variables
 
 - `--require-confirmation` flag or `REQUIRE_CONFIRMATION` environment varible can be set to prompt the user for confirmation before applying the manifest. Defaults to true.
 
@@ -81,5 +90,9 @@ Use the arrow keys to navigate: ↓ ↑ → ←
     Don't Apply
 ```
 
+### Running Test Cases
+Terraform-assistant includes test cases to ensure reliable functionality. To run these tests:
 
-### Optional `--require-confirmation` flag
+```shell
+go test ./...
+```

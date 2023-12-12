@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
@@ -30,6 +31,7 @@ func RandomName() string {
 	return fmt.Sprintf("terraform-%s.tf", randomString)
 }
 
+// GetName returns a modified version of the input name string.
 func GetName(name string) string {
 	name = RemoveBlankLinesFromString(name)
 	if EndsWithTf(name) {
@@ -39,13 +41,24 @@ func GetName(name string) string {
 	return RandomName()
 }
 
+// TerraformPath returns the path of the Terraform executable.
+// It uses the "where" command on Windows and the "which" command on other platforms to locate the Terraform executable.
+// Returns the path of the Terraform executable and any error encountered.
 func TerraformPath() (string, error) {
-	cmd := exec.Command("which", "terraform")
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		// Use the "where" command to locate the Terraform executable on Windows.
+		cmd = exec.Command("where", "terraform")
+	} else {
+		// Use the "which" command to locate the Terraform executable on other platforms.
+		cmd = exec.Command("which", "terraform")
+	}
 
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("error running Init: %w", err)
 	}
 
+	// Trim the newline character from the output and return the path of the Terraform executable.
 	return strings.TrimRight(string(output), "\n"), nil
 }
