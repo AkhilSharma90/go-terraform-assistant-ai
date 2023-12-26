@@ -8,11 +8,11 @@ import (
 	"runtime"
 	"strings"
 )
-
+//NOT GETTING USED
 func EndsWithTf(str string) bool {
 	return strings.HasSuffix(str, ".tf")
 }
-
+//NOT GETTING USED
 func RandomName() string {
 	// Initialize a byte slice of desired length
 	randomBytes := make([]byte, 5)
@@ -31,6 +31,7 @@ func RandomName() string {
 	return fmt.Sprintf("terraform-%s.tf", randomString)
 }
 
+//Getting called in the run function in run.go
 // GetName returns a modified version of the input name string.
 func GetName(name string) string {
 	name = RemoveBlankLinesFromString(name)
@@ -41,6 +42,7 @@ func GetName(name string) string {
 	return RandomName()
 }
 
+//Getting called from the main function
 // TerraformPath returns the path of the Terraform executable.
 // It uses the "where" command on Windows and the "which" command on other platforms to locate the Terraform executable.
 // Returns the path of the Terraform executable and any error encountered.

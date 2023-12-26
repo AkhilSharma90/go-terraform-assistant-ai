@@ -8,6 +8,7 @@ import (
 
 // DirExists checks if a directory exists at the specified path.
 // It returns true if the directory exists, and false otherwise.
+//FUNCTION NOT USED
 func DirExists(path string) bool {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -19,6 +20,7 @@ func DirExists(path string) bool {
 	return true
 }
 
+//Getting called from initCommand function
 // StoreFile writes the contents to a file with the given name.
 // It removes blank lines from the contents before writing.
 func StoreFile(name string, contents string) error {
@@ -32,6 +34,7 @@ func StoreFile(name string, contents string) error {
 	return nil
 }
 
+//Getting called from the main function
 // CurrenDir returns the current working directory.
 func CurrenDir() (string, error) {
 	currentDir, err := os.Getwd()

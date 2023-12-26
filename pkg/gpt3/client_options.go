@@ -5,8 +5,13 @@ import (
 	"time"
 )
 
-// ClientOption are options that can be passed when creating a new client.
+// ClientOption are options that can be passed when creating a new gpt client.
 type ClientOption func(*client) error
+
+//the functions defined below are just helper functions, found from the docs
+//they are NOT used, except withHTTPClient which is used in a test file
+//having these functions can help serve us later, they don't pollute our current files
+//and can exist in separate package and files and can be used if we want to extend functionality
 
 // WithAPIVersion is a client option that allows you to override the default api version of the client.
 func WithAPIVersion(apiVersion string) ClientOption {

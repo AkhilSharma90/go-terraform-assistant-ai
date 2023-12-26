@@ -8,6 +8,7 @@ import (
 
 var errTemplate = errors.New("invalid terraform template")
 
+//Getting called from initCmd function
 // CheckTemplate validates the given completion string as a Terraform template.
 // It checks if the template is valid by parsing it using hclsyntax.ParseConfig.
 // If any parse diagnostics are found, an error is returned.

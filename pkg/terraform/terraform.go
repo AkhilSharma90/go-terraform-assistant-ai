@@ -12,6 +12,8 @@ type Terraform struct {
 	Exec       *tfexec.Terraform
 }
 
+
+//Getting called from rootCmd function
 // NewTerraform creates a new instance of the Terraform struct.
 func NewTerraform(workingDir string, execDir string) (*Terraform, error) {
 	// Create a new instance of tfexec.Terraform using the provided working directory and execution directory.

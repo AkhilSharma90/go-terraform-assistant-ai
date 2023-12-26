@@ -6,6 +6,7 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
+//FUNCTION NOT GETTING USED
 // GetApplyConfirmation prompts the user for confirmation to apply changes.
 // If requireConfirmation is false, it returns true without prompting the user.
 // Otherwise, it displays a prompt asking the user to apply or not apply the changes.

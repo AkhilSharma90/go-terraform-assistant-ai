@@ -17,6 +17,8 @@ const (
 	defaultTimeoutSeconds = 30
 )
 
+//NONE of the functions here getting used
+
 // A Client is an API client to communicate with the OpenAI gpt-3 APIs.
 type Client interface {
 	// ChatCompletion creates a completion with the Chat completion endpoint which
@@ -50,6 +52,7 @@ type client struct {
 	httpClient     *http.Client
 }
 
+//Getting called in the NewOAIClients function in completion.go file
 // NewClient returns a new OpenAI GPT-3 API client. An apiKey is required to use the client.
 // NewClient creates a new GPT-3 client with the specified endpoint, API key, deployment name, and optional client options.
 func NewClient(endpoint string, apiKey string, deploymentName string, options ...ClientOption) (Client, error) {
@@ -78,6 +81,7 @@ func NewClient(endpoint string, apiKey string, deploymentName string, options ..
 	return c, nil
 }
 
+//Getting called in openai.go file, azureGPTCompletion function
 // Completion sends a completion request to the OpenAI API and returns the completion response.
 func (c *client) Completion(ctx context.Context, request CompletionRequest) (*CompletionResponse, error) {
 	// Set the Stream field of the request to false
@@ -107,6 +111,7 @@ func (c *client) Completion(ctx context.Context, request CompletionRequest) (*Co
 	return output, nil
 }
 
+//Getting called in openai.go file, azureGPTChatCompletion function
 // ChatCompletion sends a chat completion request to the OpenAI API and returns the response.
 func (c *client) ChatCompletion(ctx context.Context, request ChatCompletionRequest) (*ChatCompletionResponse, error) {
 	request.Stream = false
@@ -133,6 +138,7 @@ var (
 	doneSequence = []byte("[DONE]")
 )
 
+//FUNCTION NOT GETTING USED
 // CompletionStream is a method that allows streaming of completion responses from the OpenAI API.
 func (c *client) CompletionStream(ctx context.Context, request CompletionRequest, onData func(*CompletionResponse)) error {
 	// Set the stream flag to true in the request
@@ -193,6 +199,7 @@ func (c *client) CompletionStream(ctx context.Context, request CompletionRequest
 	return nil
 }
 
+//FUNCTION NOT GETTING USED
 // Edits sends a request to the GPT-3 API to perform edits on a given text.
 func (c *client) Edits(ctx context.Context, request EditsRequest) (*EditsResponse, error) {
 	// Create a new request with the provided context, HTTP method, and request body.
@@ -218,6 +225,7 @@ func (c *client) Edits(ctx context.Context, request EditsRequest) (*EditsRespons
 	return output, nil
 }
 
+//FUNCTION NOT GETTING USED
 // Search sends a search request to the OpenAI API and returns the search response.
 func (c *client) Search(ctx context.Context, request SearchRequest) (*SearchResponse, error) {
 	// Create a new request using the provided context, HTTP method, and endpoint.
@@ -243,6 +251,7 @@ func (c *client) Search(ctx context.Context, request SearchRequest) (*SearchResp
 	return output, nil
 }
 
+//FUNCTION NOT USED
 // Embeddings creates text embeddings for a supplied slice of inputs with a provided model.
 //
 // See: https://beta.openai.com/docs/api-reference/embeddings
@@ -265,6 +274,7 @@ func (c *client) Embeddings(ctx context.Context, request EmbeddingsRequest) (*Em
 	return &output, nil
 }
 
+//Getting called in completion, chatCompletion and multiple other functions above in this file
 func (c *client) performRequest(req *http.Request) (*http.Response, error) {
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -276,6 +286,7 @@ func (c *client) performRequest(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
+//Getting called in the performRequest function above
 // returns an error if this response includes an error.
 func checkForSuccess(resp *http.Response) error {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
@@ -300,6 +311,7 @@ func checkForSuccess(resp *http.Response) error {
 	return result.Error
 }
 
+//Getting called in this file above, in the completion and chat completion functions
 func getResponseObject(rsp *http.Response, v interface{}) error {
 	defer rsp.Body.Close()
 	if err := json.NewDecoder(rsp.Body).Decode(v); err != nil {
@@ -308,6 +320,7 @@ func getResponseObject(rsp *http.Response, v interface{}) error {
 	return nil
 }
 
+//Getting called in the newRequest function below
 // jsonBodyReader is a helper function that converts the given body interface{} into a JSON-encoded io.Reader.
 func jsonBodyReader(body interface{}) (io.Reader, error) {
 	if body == nil {
@@ -322,6 +335,7 @@ func jsonBodyReader(body interface{}) (io.Reader, error) {
 	return bytes.NewBuffer(raw), nil
 }
 
+//Getting called in completion, chatCompletion and other functions above
 // newRequest creates a new HTTP request with the specified method, path, and payload.
 func (c *client) newRequest(ctx context.Context, method, path string, payload interface{}) (*http.Request, error) {
 	// Create a JSON body reader from the payload
