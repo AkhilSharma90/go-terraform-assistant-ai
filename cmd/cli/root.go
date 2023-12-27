@@ -12,6 +12,7 @@ import (
 
 const version = "0.0.2"
 
+//gettig all values from environment variables and setting our variables
 var (
 	// openAIDeploymentName is the name of the deployment used for the model in the OpenAI service.
 	openAIDeploymentName = flag.String("openai-deployment-name", env.GetOr("OPENAI_DEPLOYMENT_NAME", env.String, "text-davinci-003"), "The deployment name used for the model in OpenAI service.")
@@ -48,6 +49,10 @@ var (
 func InitAndExecute(workDir string, executionDir string) {
 	flag.Parse()
 
+	//we have received workDir and executionDir in this function as args
+	//we will check if the variables for workingDir and execdir we have defined above
+	//that get values from the environment variables are empty, if yes
+	//we set their values with what's received in the args
 	// Set the working directory if not provided
 	if *workingDir == "" {
 		workingDir = &workDir
@@ -71,16 +76,18 @@ func InitAndExecute(workDir string, executionDir string) {
 
 // RootCmd returns the root command for the CLI.
 func RootCmd() *cobra.Command {
+	//creates a new struct for Terraform (struct defined in the terraform.go file of terraform package)
+	//the struct requires working directory and exec directory
 	ops, err = terraform.NewTerraform(*workingDir, *execDir)
 	if err != nil {
 		return nil
 	}
-
+//use cobra to start and create the CLI to interact with the user
 	cmd := &cobra.Command{
 		Use:          "terraform-ai",
 		Version:      version,
 		Args:         cobra.MinimumNArgs(1),
-		RunE:         runCommand,
+		RunE:         runCommand, //essentially calling the runCommand which calls the run function (both in run.go file)
 		SilenceUsage: true,
 	}
 

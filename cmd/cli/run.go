@@ -30,6 +30,8 @@ func runCommand(_ *cobra.Command, args []string) error {
 }
 
 // run is a function that executes the main logic of the CLI command.
+//main business logic, takes care of everything from creating newOAIClients function
+//to calling completion function to calling userPrompt function and many other helper functions
 // It takes a slice of strings as input arguments and returns an error if any.
 func run(args []string) error {
 	// Create a context with a cancellation function that will be triggered on receiving an interrupt signal.
@@ -48,12 +50,14 @@ func run(args []string) error {
 		args = append(args, action)
 
 		// Get completion for the run subcommand.
+		//this creates the content for the terraform file
 		com, err = completion(ctx, oaiClients, args, *openAIDeploymentName, runSubCommand)
 		if err != nil {
 			return fmt.Errorf("error completing run command: %w", err)
 		}
 
 		// Get completion for the name subcommand.
+		//this just creates names of terraform files
 		name, err = completion(ctx, oaiClients, args, *openAIDeploymentName, nameSubCommand)
 		if err != nil {
 			return fmt.Errorf("error completing name command: %w", err)

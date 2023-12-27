@@ -17,8 +17,6 @@ const (
 	defaultTimeoutSeconds = 30
 )
 
-//NONE of the functions here getting used
-
 // A Client is an API client to communicate with the OpenAI gpt-3 APIs.
 type Client interface {
 	// ChatCompletion creates a completion with the Chat completion endpoint which

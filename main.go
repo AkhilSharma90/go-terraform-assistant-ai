@@ -22,6 +22,8 @@ func main() {
 		log.Fatalf("Failed get exec dir: %s\n", err.Error())
 	}
 
+	//the current directory and terraform executable directory that we have retrieved
+	//by calling the helper functions above, we will pass to initandExecute function
 	// Initialize and execute the program
 	cli.InitAndExecute(workingDir, execDir)
 }
